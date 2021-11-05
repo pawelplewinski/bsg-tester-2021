@@ -46,10 +46,8 @@ void board_init() {
 
 	HAL_Delay(100);
 
-	printf("UID %08X%08X%08X\r\n", (unsigned int) HAL_GetUIDw0(), (unsigned int) HAL_GetUIDw1(),
-			(unsigned int) HAL_GetUIDw2());
+	printf("UID %08X%08X%08X\r\n", (unsigned int) HAL_GetUIDw0(),
+			(unsigned int) HAL_GetUIDw1(), (unsigned int) HAL_GetUIDw2());
 
 }
-
-
 
