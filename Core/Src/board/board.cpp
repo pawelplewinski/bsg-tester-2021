@@ -31,6 +31,7 @@ void board_loop() {
 
 		if (counter % 150 == 0) {
 			//150 ms
+			USER_LED.toggle();
 		}
 
 		counter++;
