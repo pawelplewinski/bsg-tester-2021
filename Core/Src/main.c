@@ -23,6 +23,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+#include "spi.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -96,6 +97,8 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_USART1_UART_Init();
+  MX_SPI1_Init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

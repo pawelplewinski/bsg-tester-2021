@@ -1,7 +1,7 @@
 #ifndef ADC_DRIVER_H_
 #define ADC_DRIVER_H_
 
-#include <stm32f4xx_hal.h>
+#include <stm32f1xx_hal.h>
 #include "ADC_interface.h"
 
 template <unsigned COUNT, unsigned OVERSAMPLING = 1>
