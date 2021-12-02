@@ -8,14 +8,12 @@
 #ifndef SRC_BOARD_BOARD_H_
 #define SRC_BOARD_BOARD_H_
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void board_init();
  void board_loop();
-
 
 
 #ifdef __cplusplus

@@ -2,7 +2,7 @@
  * board_pinout.h
  *
  *  Created on: 19 kwi 2017
- *      Author: Pawe³
+ *      Author: Paweï¿½
  */
 
 #ifndef SRC_BOARD_BOARD_PINOUT_H_
@@ -70,6 +70,8 @@ extern const STM32_Pin SDIO_CLK;
 
 //LED
 extern const STM32_Pin USER_LED;
+extern const STM32_Pin USER_LED2;
+
 
 //LCD
 extern const STM32_Pin LCD_CLK;
