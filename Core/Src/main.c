@@ -32,7 +32,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+TIM_HandleTypeDef tim2;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -53,12 +53,32 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void send_char(char c)
+{
+	HAL_UART_Transmit(&huart1, (uint8_t*)&c, 1, 1000);
+}
 
+int __io_putchar(int ch)
+{
+	send_char(ch);
+	return ch;
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void TIM2_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&tim2);
+}
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_6);
+	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
+	HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
+	HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+}
 /* USER CODE END 0 */
 
 /**
@@ -69,6 +89,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
+	SystemCoreClock = 8000000;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -77,6 +98,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  __HAL_RCC_TIM2_CLK_ENABLE();
   board_init();
   /* USER CODE END Init */
 
@@ -84,6 +106,15 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+
+  tim2.Instance = TIM2;
+  tim2.Init.Period = 65535;
+  tim2.Init.Prescaler = 8000 - 1;
+  tim2.Init.ClockDivision = 0;
+  tim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  tim2.Init.RepetitionCounter = 0;
+  tim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  HAL_TIM_Base_Init(&tim2);
 
   /* USER CODE END SysInit */
 
@@ -93,14 +124,17 @@ int main(void)
   MX_TIM1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  MX_ADC1_Init();
-  MX_TIM1_Init();
-  MX_USART1_UART_Init();
+
   /* USER CODE END 2 */
+
+  HAL_NVIC_EnableIRQ(TIM2_IRQn);
+  HAL_TIM_Base_Start_IT(&tim2);
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   board_loop();
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
