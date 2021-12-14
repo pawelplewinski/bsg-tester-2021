@@ -10,6 +10,7 @@ public:
 	STM32_ADC(ADC_HandleTypeDef *adc, DMA_HandleTypeDef *dma);
 	virtual ~STM32_ADC(void);
 	float getChannelVoltage(unsigned int channel);
+	uint16_t get(unsigned int channel);
 	void init();
 	void update();
 	void stop();
@@ -69,6 +70,22 @@ float STM32_ADC<COUNT, OVERSAMPLING>::getChannelVoltage(unsigned int channel)
 	}
 	return val / (OVERSAMPLING * 32000.0f); //equivalently: (ADC_READOUT * 2.048) / 2^16;
 }
+
+template<unsigned COUNT, unsigned OVERSAMPLING>
+inline uint16_t STM32_ADC<COUNT, OVERSAMPLING>::get(unsigned int channel)
+{
+	if(channel >= COUNT)
+		return 0;
+	uint32_t val = 0;
+	for(unsigned sample = 0; sample < OVERSAMPLING; sample++)
+	{
+		val += data[channel];
+		channel += COUNT;
+	}
+
+	return val / OVERSAMPLING;
+}
+
 
 template<unsigned COUNT, unsigned OVERSAMPLING>
 inline unsigned STM32_ADC<COUNT, OVERSAMPLING>::size()

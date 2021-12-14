@@ -2,8 +2,10 @@
 #include "board/board_pinout.h"
 
 #include "stm32f1xx_hal.h"
+#include "adc.h"
 
 #include "util/util.h"
+#include "processors/stm32/ADC_driver.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -13,6 +15,8 @@
 
 unsigned counter = 0;
 char str[4] = "";
+
+STM32_ADC<8, 1> adc(&hadc1, &hdma_adc1);
 
 /* Handle printf actions */
 extern "C" int _write(int file, char *ptr, int len) {
@@ -105,6 +109,11 @@ void board_loop() {
 				default:
 					printf("an error occured, please try again");
 					break;
+				}
+				//ADC support
+				if (pin >= 30 && pin <= 38)
+				{
+					printf("\x02A %d %d\x03", pin-30, adc.get(pin-30));
 				}
 			} else if (RW == 'W' || RW == 'w') {
 				switch (pin) {

@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -122,13 +123,11 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
+  MX_DMA_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
-
-  HAL_NVIC_EnableIRQ(TIM2_IRQn);
-  HAL_TIM_Base_Start_IT(&tim2);
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
