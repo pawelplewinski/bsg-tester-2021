@@ -2,18 +2,21 @@
 #include "board/board_pinout.h"
 
 #include "stm32f1xx_hal.h"
+#include "adc.h"
 
 #include "util/util.h"
-#include "util/Fifo.h"
-
-#include "usart.h"
-#include "spi.h"
+#include "processors/stm32/ADC_driver.h"
 
 #include <cstdlib>
 #include <cstdio>
-#include <cstdint>
+#include "usart.h"
+#include <stdio.h>
+#include <string.h>
+
 unsigned counter = 0;
-Fifo<uint8_t, 256> fifo;
+char str[4] = "";
+
+STM32_ADC<8, 1> adc(&hadc1, &hdma_adc1);
 
 /* Handle printf actions */
 extern "C" int _write(int file, char *ptr, int len) {
@@ -28,45 +31,163 @@ void microdelay() {
 //		asm("nop");
 }
 
+
 void board_loop() {
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+
+	int status, counter = 0;
+//status 0 - ready to receive
+//status 1 - currently receiving
+//status 2 - received
+	int cmdLen = 64;
+	char cmd[cmdLen] = "";
+	uint8_t lastByte = 0;
+
+	char RW;
+	int pin, value;
+
 	while (1) {
-		/* USER CODE END WHILE */
 
-		if (counter % 150 == 0) {
-			//150 ms
-			USER_LED.toggle();
-		}
+//sekcja mrugajacej diody
+//		USER_LED.toggle();
 
-
+//sekcja kontroli odbierania komendy
 		if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_RXNE) == SET) {
-			uint8_t value;
-			HAL_UART_Receive(&huart1, &value, 1, 100);
-			fifo.put(value);
+			HAL_UART_Receive(&huart1, &lastByte, 1, 1);
+			if (lastByte == 0x02) {
+				status = 1;
+			} else if (lastByte == 0x03) {
+				status = 2;
+				cmd[counter] = '\0';
+				counter = 0;
+			} else {
+				cmd[counter] = lastByte;
+				counter++;
+			}
 		}
 
-		{
-			//przetwarzanie
+//sekcja parsowania komendy i drzewka poleceń
+		if (status == 2) {
+
+			sscanf(cmd, "%c %d %d", &RW, &pin, &value);
+			memset(cmd, 0, strlen(cmd));
+			status = 0;
+
+//00-09 - GPIO read
+//10-19 - GPIO write
+//20-29 - ADC
+//30-39 - DAC
+//40-49 - PWM
+
+			if (RW == 'R' || RW == 'r') {
+				switch (pin) {
+				case 0:
+					//STEROWANIE POMPY
+					//odczyt pinu PB8
+					if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) == GPIO_PIN_RESET)
+						printf("pump controller 2: 1");
+					else if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) == GPIO_PIN_SET)
+						printf("pump controller 2: 1");
+					break;
+				case 1:
+					//STEROWANIE POMPY
+					//odczyt pinu PB9
+					if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) == GPIO_PIN_RESET)
+						printf("pump controller 2: 1");
+					else if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) == GPIO_PIN_SET)
+						printf("pump controller 2: 1");
+					break;
+				case 20:
+					//SYGNAL PREDKOSCI KOLA TOCZNEGO
+					//odczyt ADC pinu PA5
+					//printf odczytu
+					break;
+				case 21:
+					//SYGNALY STERUJACE ZAWORAMI
+					//odczyt ADC pinow PA1, PA2, PA3, PA4
+					//printf odczytu
+					break;
+				default:
+					printf("an error occured, please try again");
+					break;
+				}
+				//ADC support
+				if (pin >= 30 && pin <= 38)
+				{
+					printf("\x02A %d %d\x03", pin-30, adc.get(pin-30));
+				}
+			} else if (RW == 'W' || RW == 'w') {
+				switch (pin) {
+				case 10:
+					//ZADAJNIK JAZDY TRYB JAZDY
+					//sygnal na pin PB12
+					if(value == 0)
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+					else if(value == 1)
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+					break;
+				case 11:
+					//ZADAJNIK JAZDY TRYB HAMOWANIA
+					//sygnal na pin PB13
+					if(value == 0)
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
+					else if(value == 1)
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
+					break;
+				case 12:
+					//RAUMFAHRT
+					//sygnal na pin PB14
+					if(value == 0)
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
+					else if(value == 1)
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+					break;
+				case 13:
+					//BREMSCOSTAM
+					//sygnal na pin PB15
+					if(value == 0)
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
+					if(value == 1)
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_SET);
+					break;
+				case 14:
+					//AWARYJNE LUZOWANIE TWOJEJ STAREJ NA SNIADANIE
+					//sygnal na pin A0
+					if(value == 0)
+						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
+					if(value == 1)
+						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
+					break;
+				case 30:
+					//CISNIENIE ZACISKU HAMULCOWEGO
+					//4 x DAC
+					break;
+				case 31:
+					//WARTOSC CISNIENIA POMPY
+					//2 x DAC
+					break;
+				case 40:
+					//PREDKOSC KOLA
+					//4 x PWM PA6 PA7 PB0 PB1
+					if(value > 0) {
+						TIM2->CNT = 0;
+						TIM2->ARR = value - 1;
+					} else {
+						printf("value too high");
+					}
+					break;
+				default:
+					printf("an error occured, please try again");
+					break;
+				}
+			} else {
+					printf("an error occured, please try again");
+			}
+
 		}
 
-		{
-
-		}
-
-		counter++;
-		HAL_Delay(1);
 	}
 }
 
-void dac_write(uint8_t pin, uint8_t value)
-{
-	uint8_t tx_buf[] = { pin<<3 | 0 << 1, 0x0, value };
-
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, tx_buf, 3, HAL_MAX_DELAY);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_SET);
-}
 
 void board_init() {
 
