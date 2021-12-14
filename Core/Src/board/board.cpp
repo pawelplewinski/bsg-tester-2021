@@ -3,13 +3,15 @@
 
 #include "stm32f1xx_hal.h"
 #include "adc.h"
+#include "usart.h"
+#include "spi.h"
 
 #include "util/util.h"
 #include "processors/stm32/ADC_driver.h"
+#include "devices/SPI_DAC.h"
 
 #include <cstdlib>
 #include <cstdio>
-#include "usart.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -17,6 +19,7 @@ unsigned counter = 0;
 char str[4] = "";
 
 STM32_ADC<8, 1> adc(&hadc1, &hdma_adc1);
+SPI_DAC dac(hspi1, SPI_CS);
 
 /* Handle printf actions */
 extern "C" int _write(int file, char *ptr, int len) {
@@ -111,9 +114,9 @@ void board_loop() {
 					break;
 				}
 				//ADC support
-				if (pin >= 30 && pin <= 38)
+				if (pin >= 20 && pin < 28)
 				{
-					printf("\x02A %d %d\x03", pin-30, adc.get(pin-30));
+					printf("\x02A %d %d\x03", pin-20, adc.get(pin-20));
 				}
 			} else if (RW == 'W' || RW == 'w') {
 				switch (pin) {
@@ -178,6 +181,11 @@ void board_loop() {
 				default:
 					printf("an error occured, please try again");
 					break;
+				}
+				//set DAC
+				if (pin >= 20 && pin < 28)
+				{
+					dac.set_channel(pin-20, value);
 				}
 			} else {
 					printf("an error occured, please try again");
